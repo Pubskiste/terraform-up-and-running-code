@@ -1,3 +1,13 @@
+terraform {
+  backend "s3" {
+    bucket = "max-terraform-up-and-running-state"
+    key = "global/s3/terraform.tfstate"
+    region = "eu-central-1"
+    dynamodb_table = "terraform_up_and_running_lock"
+    encrypt = true
+  }
+}
+
 # The AWS provider block configures the AWS provider with the given region.
 provider "aws" {
   region = "eu-central-1"
