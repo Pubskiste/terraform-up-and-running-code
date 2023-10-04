@@ -1,10 +1,11 @@
 terraform {
-  backend "s3" {
-    bucket = "max-terraform-up-and-running-state"
-    key = "global/s3/terraform.tfstate"
-    region = "eu-central-1"
-    dynamodb_table = "terraform_up_and_running_lock"
-    encrypt = true
+  required_version = ">= 1.0.0, < 2.0.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
   }
 }
 
@@ -26,6 +27,7 @@ resource "aws_instance" "app" {
   availability_zone      = "eu-central-1a"
   ami                    = "ami-0f81db4cf7eb125ce"
   vpc_security_group_ids = [aws_security_group.instance.id]
+  subnet_id = data.aws_subnet.vpc_subnet1.id
   user_data              = <<-EOF
               #!/bin/bash
               echo "Hello, World" > index.html
@@ -33,7 +35,7 @@ resource "aws_instance" "app" {
               EOF
   user_data_replace_on_change = true
   tags = {
-    Name = "Max terraform-example"
+    Name = "terraform-example-01"
   }
 }
 
@@ -46,12 +48,23 @@ resource "aws_instance" "app" {
 #   - cidr_blocks: The CIDR blocks allowed access.
 resource "aws_security_group" "instance" {
   name = "terraform-example-instance"
+  vpc_id = data.aws_vpc.vpc.id
   ingress {
     from_port   = var.server_port
     to_port     = var.server_port
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
+
+variable "vpc_id" {
+  description = "Id of the VPC where the EC2-Instances get deployed to."
+  type        = string
+}
+
+variable "aws_subnet_id" {
+  description = "Subnet in which the EC2-Instance should be deployed."
+  type        = string
 }
 
 variable "server_port" {
